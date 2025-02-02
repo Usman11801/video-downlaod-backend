@@ -2,24 +2,15 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { exec } = require('child_process');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Create downloads directory if it doesn't exist
-const downloadsDir = path.join(__dirname, 'downloads');
-if (!fs.existsSync(downloadsDir)) {
-  fs.mkdirSync(downloadsDir);
-}
 
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
 
 // Route to handle video preview
-app.post('/preview', async (req, res) => {
+app.post('/api/preview', async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
@@ -50,103 +41,34 @@ app.post('/preview', async (req, res) => {
 });
 
 // Route to handle video download
-app.post('/download', (req, res) => {
+app.post('/api/download', async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  // Set headers for SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const outputPath = path.join(downloadsDir, `video-${Date.now()}.mp4`);
-  
-  if (fs.existsSync(outputPath)) {
-    fs.unlinkSync(outputPath);
-  }
-
-  const command = `yt-dlp -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
-
-  console.log('Starting download...');
-  
-  const downloadProcess = exec(command);
-
-  downloadProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
-    // Look for percentage in the output
-    const percentageMatch = data.match(/(\d+\.?\d*)%/);
-    if (percentageMatch) {
-      const progress = Math.round(parseFloat(percentageMatch[1]));
-      res.write(`data: ${JSON.stringify({ progress })}\n\n`);
-    }
-  });
-
-  downloadProcess.stderr.on('data', (data) => {
-    console.log(`stderr: ${data}`);
-  });
-
-  downloadProcess.on('error', (error) => {
-    console.error(`Error: ${error.message}`);
-    res.write(`data: ${JSON.stringify({ error: 'Failed to download the video' })}\n\n`);
-    res.end();
-  });
-
-  downloadProcess.on('close', async (code) => {
-    console.log(`Download process exited with code ${code}`);
+  try {
+    // Instead of downloading to filesystem, get direct video URL
+    const command = `yt-dlp -f "best[ext=mp4]/best" -g "${url}"`;
     
-    if (code === 0 && fs.existsSync(outputPath)) {
-      // Send a temporary file ID instead of the actual file
-      const fileId = path.basename(outputPath);
-      res.write(`data: ${JSON.stringify({
-        completed: true,
-        fileId: fileId
-      })}\n\n`);
-    } else {
-      res.write(`data: ${JSON.stringify({ error: 'Download failed' })}\n\n`);
-    }
-    res.end();
-  });
-});
-
-// Add a new endpoint to serve the video file
-app.get('/download-file/:fileId', (req, res) => {
-  const { fileId } = req.params;
-  const filePath = path.join(downloadsDir, fileId);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-
-  res.download(filePath, 'video.mp4', (err) => {
-    if (err) {
-      console.error('Error sending file:', err);
-      return;
-    }
-    // Delete the file after sending
-    fs.unlink(filePath, (unlinkErr) => {
-      if (unlinkErr) {
-        console.error('Error deleting file:', unlinkErr);
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to get video URL' });
       }
+
+      // Return the direct video URL
+      res.json({ 
+        videoUrl: stdout.trim(),
+        title: url.split('/').pop() || 'video'
+      });
     });
-  });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to process video' });
+  }
 });
 
-// Add new route for progress updates using Server-Sent Events (SSE)
-app.get('/download-progress', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-});
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-// Make sure to export the app
+// Export the express api
 module.exports = app;
