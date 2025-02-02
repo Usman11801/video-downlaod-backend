@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 5001;
+const PORT = process.env.PORT || 3000;
 
 // Create downloads directory if it doesn't exist
 const downloadsDir = path.join(__dirname, 'downloads');
@@ -145,5 +145,8 @@ app.get('/download-progress', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
+
+// Make sure to export the app
+module.exports = app;
