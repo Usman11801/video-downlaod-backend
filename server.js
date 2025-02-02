@@ -7,7 +7,11 @@ const app = express();
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: '*', // Be more specific in production
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 
 // Route to handle video preview
 app.post('/api/preview', async (req, res) => {
@@ -17,13 +21,22 @@ app.post('/api/preview', async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  // Command to get video info using yt-dlp
-  const command = `yt-dlp --dump-json ${url}`;
+  // Add quotes around URL to handle special characters
+  const command = `yt-dlp --dump-json "${url}"`;
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error: ${error.message}`);
-      return res.status(500).json({ error: 'Failed to fetch video info' });
+      console.error(`Error executing yt-dlp: ${error.message}`);
+      console.error(`stderr: ${stderr}`);
+      return res.status(500).json({ 
+        error: 'Failed to fetch video info',
+        details: error.message,
+        stderr: stderr
+      });
+    }
+
+    if (stderr) {
+      console.error(`stderr: ${stderr}`);
     }
 
     try {
@@ -35,7 +48,12 @@ app.post('/api/preview', async (req, res) => {
       });
     } catch (err) {
       console.error('Error parsing video info:', err);
-      res.status(500).json({ error: 'Failed to parse video info' });
+      console.error('Raw stdout:', stdout);
+      res.status(500).json({ 
+        error: 'Failed to parse video info',
+        details: err.message,
+        stdout: stdout
+      });
     }
   });
 });
