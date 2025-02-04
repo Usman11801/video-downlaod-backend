@@ -143,6 +143,20 @@ app.get('/download-progress', (req, res) => {
   res.flushHeaders();
 });
 
+// Welcome endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to the Video Downloader API',
+    endpoints: {
+      '/': 'Welcome message and API information',
+      '/preview': 'POST - Get video information',
+      '/download': 'POST - Download a video',
+      '/download-file/:fileId': 'GET - Download a processed video file',
+      '/download-progress': 'GET - Stream download progress updates'
+    }
+  });
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
