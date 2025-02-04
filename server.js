@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 5001;
+const PORT = 8080;
 
 // Create downloads directory if it doesn't exist
 const downloadsDir = path.join(__dirname, 'downloads');
@@ -27,7 +27,7 @@ app.post('/preview', async (req, res) => {
   }
 
   // Command to get video info using yt-dlp
-  const command = `yt-dlp --dump-json ${url}`;
+  const command = `/usr/local/bin/yt-dlp --dump-json ${url}`;
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
@@ -69,7 +69,7 @@ app.post('/download', (req, res) => {
     fs.unlinkSync(outputPath);
   }
 
-  const command = `yt-dlp -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+  const command = `/usr/local/bin/yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
 
   console.log('Starting download...');
   
