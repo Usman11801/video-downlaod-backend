@@ -27,7 +27,9 @@ app.post('/preview', async (req, res) => {
   }
 
   // Command to get video info using yt-dlp
-  const command = `yt-dlp --dump-json ${url}`;
+  // const command = `yt-dlp --dump-json ${url}`;
+  const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
+
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
@@ -69,7 +71,9 @@ app.post('/download', (req, res) => {
     fs.unlinkSync(outputPath);
   }
 
-  const command = `yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+  // const command = `yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+  const command = `yt-dlp --cookies /root/cookies.txt -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+
 
   console.log('Starting download...');
   
