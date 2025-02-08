@@ -18,7 +18,7 @@ if (!fs.existsSync(downloadsDir)) {
 app.use(bodyParser.json());
 app.use(cors());
 
-// Route to handle video preview
+// Route to handle video previe
 app.post('/api/preview', async (req, res) => {
   const { url } = req.body;
 
@@ -51,7 +51,7 @@ app.post('/api/preview', async (req, res) => {
   });
 });
 
-// Route to handle video download
+// Route to handle video downloa
 app.post('/api/download', (req, res) => {
   const { url } = req.body;
 
@@ -116,7 +116,10 @@ app.post('/api/download', (req, res) => {
   });
 });
 
-// Add a new endpoint to serve the video file
+
+
+
+// Add a new endpoint to serve the video fil
 app.get('/api/download-file/:fileId', (req, res) => {
   const { fileId } = req.params;
   const filePath = path.join(downloadsDir, fileId);
@@ -139,6 +142,9 @@ app.get('/api/download-file/:fileId', (req, res) => {
   });
 });
 
+
+
+
 // Add new route for progress updates using Server-Sent Events (SSE)
 app.get('/api/download-progress', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -146,6 +152,8 @@ app.get('/api/download-progress', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 });
+
+
 
 // Welcome endpoint
 app.get('/api/', (req, res) => {
@@ -161,7 +169,9 @@ app.get('/api/', (req, res) => {
   });
 });
 
+
+
 // Start the server
 app.listen(PORT,"0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on 0.0.0.0 http://localhost:${PORT}`);
 });
