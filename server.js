@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 5001;
+const PORT = 3001;
 
 // Create downloads directory if it doesn't exist
 const downloadsDir = path.join(__dirname, 'downloads');
@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Route to handle video preview
-app.post('/preview', async (req, res) => {
+app.post('/api/preview', async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
@@ -52,7 +52,7 @@ app.post('/preview', async (req, res) => {
 });
 
 // Route to handle video download
-app.post('/download', (req, res) => {
+app.post('/api/download', (req, res) => {
   const { url } = req.body;
 
   if (!url) {
@@ -117,7 +117,7 @@ app.post('/download', (req, res) => {
 });
 
 // Add a new endpoint to serve the video file
-app.get('/download-file/:fileId', (req, res) => {
+app.get('/api/download-file/:fileId', (req, res) => {
   const { fileId } = req.params;
   const filePath = path.join(downloadsDir, fileId);
 
@@ -140,7 +140,7 @@ app.get('/download-file/:fileId', (req, res) => {
 });
 
 // Add new route for progress updates using Server-Sent Events (SSE)
-app.get('/download-progress', (req, res) => {
+app.get('/api/download-progress', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -148,7 +148,7 @@ app.get('/download-progress', (req, res) => {
 });
 
 // Welcome endpoint
-app.get('/', (req, res) => {
+app.get('/api/', (req, res) => {
   res.json({
     message: 'Welcome to the Video Downloader API',
     endpoints: {
@@ -162,6 +162,6 @@ app.get('/', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+app.listen(PORT,"0.0.0.0", () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
