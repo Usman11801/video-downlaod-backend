@@ -21,23 +21,23 @@ app.use(cors());
 // Function to dynamically determine which browser cookies to use
 const getCookiesCommand = (url) => {
   const browsers = ["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "whale", "chromium", "opera"];
-  
+
   for (const browser of browsers) {
     const command = `yt-dlp --cookies-from-browser ${browser} --dump-json "${url}"`;
-    
+
     try {
-      execSync(command, { stdio: "ignore" }); // Test if the command runs successfully
-      console.log(`Using cookies from: ${browser}`);
-      return command; // Return the first working command
+      console.log(`Trying browser: ${browser}`);
+      execSync(command, { stdio: "ignore" }); // Test if it works
+      console.log(`✅ Success with browser: ${browser}`);
+      return command; // Return first successful command
     } catch (error) {
-      console.error(`Failed for browser: ${browser}, trying next...`);
-      continue; // Try the next browser
+      console.log(`❌ Failed for browser: ${browser}, trying next...`);
+      continue; // Try next browser
     }
   }
 
-  // Fallback to using a static cookies file if all browsers fail
-  console.warn("No valid browser found. Using static cookies file instead.");
-  return `yt-dlp --cookies /root/cookies.txt --dump-json "${url}"`;
+  console.log("⚠️ No valid browser found. Using static cookies file instead.");
+  return `yt-dlp --cookies /root/cookies.txt --dump-json "${url}"`; // Fallback to static cookies
 };
 
 // Route to handle video preview
