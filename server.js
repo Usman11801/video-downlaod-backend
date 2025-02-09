@@ -28,23 +28,7 @@ app.post('/api/preview', async (req, res) => {
 
   // Command to get video info using yt-dlp
   // const command = `yt-dlp --dump-json ${url}`;
-  // const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
-    const browsers = ["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "whale", "chromium", "opera"];
-
-  // const command = ` yt-dlp --cookies-from-browser auto --dump-json ${url}`
-
-const getCookiesCommand = (url) => {
-  for (const browser of browsers) {
-    const command = `yt-dlp --cookies-from-browser ${browser} --dump-json "${url}"`;
-    try {
-      execSync(command, { stdio: "ignore" }); // Test if the command runs successfully
-      return command; // If it works, return this command
-    } catch (error) {
-      continue; // Try the next browser
-    }
-  }
-  return null; // No valid browser found
-};
+  const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
 
 
   exec(command, (error, stdout, stderr) => {
@@ -88,8 +72,7 @@ app.post('/api/download', (req, res) => {
   }
 
   // const command = `yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
-  // const command = `yt-dlp --cookies /root/cookies.txt -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
-  const command = getCookiesCommand(url)
+  const command = `yt-dlp --cookies /root/cookies.txt -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
 
 
   console.log('Starting download...');
