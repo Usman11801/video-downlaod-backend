@@ -28,7 +28,9 @@ app.post('/api/preview', async (req, res) => {
 
   // Command to get video info using yt-dlp
   // const command = `yt-dlp --dump-json ${url}`;
-  const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
+  // const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
+ const command = ` yt-dlp --cookies-from-browser auto --dump-json ${url}`
+
 
 
   exec(command, (error, stdout, stderr) => {
