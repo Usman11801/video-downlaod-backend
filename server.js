@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { execSync, exec } = require('child_process');
+const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -18,29 +18,7 @@ if (!fs.existsSync(downloadsDir)) {
 app.use(bodyParser.json());
 app.use(cors());
 
-// Function to dynamically determine which browser cookies to use
-const getCookiesCommand = (url) => {
-  const browsers = ["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "whale", "chromium", "opera"];
-
-  for (const browser of browsers) {
-    const command = `yt-dlp --cookies-from-browser ${browser} --dump-json "${url}"`;
-
-    try {
-      console.log(`Trying browser: ${browser}`);
-      execSync(command, { stdio: "ignore" }); // Test if it works
-      console.log(`✅ Success with browser: ${browser}`);
-      return command; // Return first successful command
-    } catch (error) {
-      console.log(`❌ Failed for browser: ${browser}, trying next...`);
-      continue; // Try next browser
-    }
-  }
-
-  console.log("⚠️ No valid browser found. Using static cookies file instead.");
-  return `yt-dlp --cookies /root/cookies.txt --dump-json "${url}"`; // Fallback to static cookies
-};
-
-// Route to handle video preview
+// Route to handle video previe
 app.post('/api/preview', async (req, res) => {
   const { url } = req.body;
 
@@ -48,7 +26,26 @@ app.post('/api/preview', async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  const command = getCookiesCommand(url);
+  // Command to get video info using yt-dlp
+  // const command = `yt-dlp --dump-json ${url}`;
+  // const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
+    const browsers = ["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "whale", "chromium", "opera"];
+
+  // const command = ` yt-dlp --cookies-from-browser auto --dump-json ${url}`
+
+const getCookiesCommand = (url) => {
+  for (const browser of browsers) {
+    const command = `yt-dlp --cookies-from-browser ${browser} --dump-json "${url}"`;
+    try {
+      execSync(command, { stdio: "ignore" }); // Test if the command runs successfully
+      return command; // If it works, return this command
+    } catch (error) {
+      continue; // Try the next browser
+    }
+  }
+  return null; // No valid browser found
+};
+
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
@@ -70,7 +67,7 @@ app.post('/api/preview', async (req, res) => {
   });
 });
 
-// Route to handle video download
+// Route to handle video downloa
 app.post('/api/download', (req, res) => {
   const { url } = req.body;
 
@@ -85,19 +82,23 @@ app.post('/api/download', (req, res) => {
   res.flushHeaders();
 
   const outputPath = path.join(downloadsDir, `video-${Date.now()}.mp4`);
-
+  
   if (fs.existsSync(outputPath)) {
     fs.unlinkSync(outputPath);
   }
 
-  const command = getCookiesCommand(url);
+  // const command = `yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+  // const command = `yt-dlp --cookies /root/cookies.txt -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
+  const command = getCookiesCommand(url)
+
 
   console.log('Starting download...');
-
+  
   const downloadProcess = exec(command);
 
   downloadProcess.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
+    // Look for percentage in the output
     const percentageMatch = data.match(/(\d+\.?\d*)%/);
     if (percentageMatch) {
       const progress = Math.round(parseFloat(percentageMatch[1]));
@@ -119,8 +120,12 @@ app.post('/api/download', (req, res) => {
     console.log(`Download process exited with code ${code}`);
     
     if (code === 0 && fs.existsSync(outputPath)) {
+      // Send a temporary file ID instead of the actual file
       const fileId = path.basename(outputPath);
-      res.write(`data: ${JSON.stringify({ completed: true, fileId: fileId })}\n\n`);
+      res.write(`data: ${JSON.stringify({
+        completed: true,
+        fileId: fileId
+      })}\n\n`);
     } else {
       res.write(`data: ${JSON.stringify({ error: 'Download failed' })}\n\n`);
     }
@@ -128,7 +133,10 @@ app.post('/api/download', (req, res) => {
   });
 });
 
-// Route to serve the downloaded video file
+
+
+
+// Add a new endpoint to serve the video fil
 app.get('/api/download-file/:fileId', (req, res) => {
   const { fileId } = req.params;
   const filePath = path.join(downloadsDir, fileId);
@@ -142,6 +150,7 @@ app.get('/api/download-file/:fileId', (req, res) => {
       console.error('Error sending file:', err);
       return;
     }
+    // Delete the file after sending
     fs.unlink(filePath, (unlinkErr) => {
       if (unlinkErr) {
         console.error('Error deleting file:', unlinkErr);
@@ -150,13 +159,18 @@ app.get('/api/download-file/:fileId', (req, res) => {
   });
 });
 
-// Route for download progress updates using Server-Sent Events (SSE)
+
+
+
+// Add new route for progress updates using Server-Sent Events (SSE)
 app.get('/api/download-progress', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 });
+
+
 
 // Welcome endpoint
 app.get('/api/', (req, res) => {
@@ -172,7 +186,9 @@ app.get('/api/', (req, res) => {
   });
 });
 
+
+
 // Start the server
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT,"0.0.0.0", () => {
   console.log(`Server running on 0.0.0.0 http://localhost:${PORT}`);
 });
