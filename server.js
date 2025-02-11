@@ -18,6 +18,17 @@ if (!fs.existsSync(downloadsDir)) {
 app.use(bodyParser.json());
 app.use(cors());
 
+// Add this function at the top after the imports
+const isValidUrl = (url) => {
+  const supportedDomains = ['instagram.com', 'tiktok.com'];
+  try {
+    const urlObj = new URL(url);
+    return supportedDomains.some(domain => urlObj.hostname.includes(domain));
+  } catch {
+    return false;
+  }
+};
+
 // Route to handle video previe
 app.post('/api/preview', async (req, res) => {
   const { url } = req.body;
@@ -26,10 +37,12 @@ app.post('/api/preview', async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  // Command to get video info using yt-dlp
-  // const command = `yt-dlp --dump-json ${url}`;
-  const command = `yt-dlp --cookies /root/cookies.txt --dump-json ${url}`;
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ error: 'Only Instagram and TikTok URLs are supported' });
+  }
 
+  // Remove cookies from command since we don't need them anymore
+  const command = `yt-dlp --dump-json ${url}`;
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
@@ -59,6 +72,10 @@ app.post('/api/download', (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ error: 'Only Instagram and TikTok URLs are supported' });
+  }
+
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -71,9 +88,8 @@ app.post('/api/download', (req, res) => {
     fs.unlinkSync(outputPath);
   }
 
-  // const command = `yt-dlp  -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
-  const command = `yt-dlp --cookies /root/cookies.txt -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
-
+  // Remove cookies from command since we don't need them anymore
+  const command = `yt-dlp -f "best[ext=mp4]/best" -o "${outputPath}" "${url}" --newline --progress`;
 
   console.log('Starting download...');
   
